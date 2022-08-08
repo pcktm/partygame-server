@@ -1,12 +1,14 @@
 import { Room, Client } from "colyseus";
 import { customAlphabet } from 'nanoid'
-import { Player, RoomState } from "./schema/RoomState";
+import { Duel, Player, Question, RoomState } from "./schema/RoomState";
 import { getRandomEmoji } from "./utils/emojis";
 
-const nanoid = customAlphabet('1234567890abcdefghijklmnoprstuwxyz', 6)
+const nanoid = customAlphabet('abcdefghijklmnoprstuwxyz', 6)
 
 export class GameRoom extends Room<RoomState> {
   LOBBY_CHANNEL = "$epiclobby"
+
+  REGULAR_WAIT_TIME = 10 * 1000;
 
   async onCreate (options: any) {
     this.roomId = await this.generateRoomId();
@@ -24,16 +26,8 @@ export class GameRoom extends Room<RoomState> {
       }
 
       // check if all players are ready and start game
-      if (this.state.players.size > 1) {
-        let allReady = true;
-        this.state.players.forEach(player => {
-          if (!player.isReady) {
-            allReady = false;
-          }
-        })
-        if (allReady) {
-          this.startGame();
-        }
+      if (this.state.players.size > 1 && this.areAllPlayersReady()) {
+        this.startGame();
       }
     });
 
@@ -41,14 +35,42 @@ export class GameRoom extends Room<RoomState> {
       if (this.state.screen !== "questionAsked") return;
       const player = this.state.players.get(client.sessionId);
       if (player) {
-        player.answeredCurrentQuestion = true;
-        this.state.internalAnswers.set(client.sessionId, answer);
+        player.isReady = true;
+        this.state.currentQuestion.addAnswer(client, answer);
       }
       // if all players submitted answers
-      if (this.state.internalAnswers.size === this.state.players.size) {
+      if (this.areAllPlayersReady()) {
         this.beginDuels();
       }
     })
+
+    this.onMessage("submitDuelChoice", async (client, answer) => {
+      if (this.state.screen !== "duel" || this.state.currentDuel.revealVotes) return;
+      const player = this.state.players.get(client.sessionId);
+      if (player && !this.state.currentDuel.votes.has(client.sessionId)) {
+        player.isReady = true;
+        this.state.currentDuel.votes.set(client.sessionId, answer);
+      }
+
+      if (this.areAllPlayersReady()) {
+        this.updateScores();
+        this.unreadyPlayers();
+        this.state.currentDuel.reveal();
+        
+        await new Promise(resolve => setTimeout(resolve, this.REGULAR_WAIT_TIME));
+        this.beginNextDuel();
+      }
+    })
+  }
+
+  updateScores() {
+    this.state.currentDuel.votes.forEach((answer, clientId) => {
+      const player = this.state.players.get(clientId);
+      const isCorrect = answer === this.state.currentDuel.internalCorrectPlayerId;
+      if (player) {
+        player.score += isCorrect ? 1 : 0;
+      }
+    });
   }
 
   startGame() {
@@ -58,15 +80,58 @@ export class GameRoom extends Room<RoomState> {
   }
 
   beginNewRound() {
+    this.unreadyPlayers();
+
+    if (this.state.randomQuestionQueue.length === 0) {
+      this.showScoresAndEndGame();
+      return;
+    }
+
+    this.state.currentDuel = undefined;
     this.state.roundCount += 1;
-    this.state.clearAnswers();
     this.state.screen = "questionAsked";
-    this.state.currentQuestion = this.state.randomQuestionQueue.shift();
+    this.state.currentQuestion = new Question(this.state.randomQuestionQueue.shift());
   }
 
   beginDuels() {
-    this.state.clearAnswers();
-    this.state.screen = "duel";
+    this.unreadyPlayers();
+    this.state.generateDuelQueue();
+    this.beginNextDuel();
+  }
+
+  showScoresAndEndGame() {
+    this.unreadyPlayers();
+    this.state.screen = "scores";
+    this.broadcast('showScores');
+  }
+
+  beginNextDuel() {
+    // if there are no more duels, end the round
+    this.unreadyPlayers();
+    if (this.state.internalDuels.length === 0) {
+      this.beginNewRound();
+      return;
+    }
+    this.state.currentDuel = this.state.internalDuels.shift();
+    this.state.screen = 'duel';
+    this.broadcast('beginNewDuel');
+  }
+
+  areAllPlayersReady() {
+    let allReady = true;
+    this.state.players.forEach(player => {
+      if (!player.isReady) {
+        allReady = false;
+      }
+    });
+    return allReady;
+  }
+
+  unreadyPlayers() {
+    this.state.players.forEach(player => {
+      player.isReady = false;
+    });
+    this.broadcastPatch();
   }
 
   onJoin (client: Client, options: any) {
@@ -78,6 +143,7 @@ export class GameRoom extends Room<RoomState> {
     }
 
     const player = new Player();
+    player.id = client.sessionId;
     player.nickname = options.nickname;
     player.emoji = getRandomEmoji();
     this.state.players.set(client.sessionId, player);

@@ -1,7 +1,12 @@
 import { Schema, MapSchema, type } from "@colyseus/schema";
+import { Room, Client } from "colyseus";
 import { getRandomQueue } from "../../utils/questions";
+import lodash from 'lodash';
 
 export class Player extends Schema {
+  @type('string')
+  id: string;
+
   @type('string')
   nickname = '';
 
@@ -13,9 +18,49 @@ export class Player extends Schema {
 
   @type('number')
   score = 0;
+}
+
+export class Question extends Schema {
+  @type('string')
+  text = '';
+
+  answers: Map<string, string> = new Map();
+
+  addAnswer(client: Client, answer: string) {
+    this.answers.set(client.sessionId, answer);
+  }
+
+  constructor(question: string = '') {
+    super();
+    this.text = question;
+  }
+}
+
+export class Duel extends Schema {
+  @type('string')
+  answer: string;
+
+  @type(Player)
+  left?: Player;
+
+  @type(Player)
+  right?: Player;
 
   @type('boolean')
-  answeredCurrentQuestion = false;
+  revealVotes = false;
+
+  internalCorrectPlayerId: string;
+
+  @type('string')
+  correctPlayerId: string;
+
+  @type({map: 'string'})
+  votes = new MapSchema<string>();
+
+  reveal() {
+    this.correctPlayerId = this.internalCorrectPlayerId;
+    this.revealVotes = true;
+  }
 }
 
 export class RoomState extends Schema {
@@ -29,28 +74,46 @@ export class RoomState extends Schema {
   players = new MapSchema<Player>();
 
   @type('string')
-  screen: ('lobby' | 'duel' | 'questionAsked') = 'lobby';
+  screen: ('lobby' | 'duel' | 'questionAsked' | 'scores') = 'lobby';
 
-  @type('string')
-  currentQuestion: string;
+  @type(Question)
+  currentQuestion: Question;
 
-  @type({array: 'string'})
-  submittedAnswers: string[] = [];
+  @type(Duel)
+  currentDuel: Duel;
 
-  internalAnswers: Map<string, string> = new Map();
-
+  internalDuels: Duel[] = [];
   randomQuestionQueue = getRandomQueue();
 
   constructor() {
     super();
-    this.currentQuestion = this.randomQuestionQueue.shift();
+    this.currentQuestion = new Question(this.randomQuestionQueue.shift());
   }
 
-  clearAnswers() {
-    this.internalAnswers.clear();
-    this.submittedAnswers = [];
-    this.players.forEach(player => {
-      player.answeredCurrentQuestion = false;
-    });
+  generateDuelQueue() {
+    this.internalDuels = [];
+    const availablePlayers = lodash.shuffle(Array.from(this.currentQuestion.answers.keys()));
+    const duels: Duel[] = [];
+
+    for (let i = 0; i < availablePlayers.length - 1; i += 1) {
+      const first = availablePlayers[i];
+      const second = availablePlayers[i + 1];
+
+      const duel = new Duel();
+      duel.internalCorrectPlayerId = first;
+      duel.answer = this.currentQuestion.answers.get(first);
+
+      if (Math.random() > 0.5) {
+        duel.left = this.players.get(first);
+        duel.right = this.players.get(second);
+      } else {
+        duel.left = this.players.get(second);
+        duel.right = this.players.get(first);
+      }
+
+      duels.push(duel);
+    }
+    this.internalDuels = lodash.shuffle(duels);
   }
+
 }
