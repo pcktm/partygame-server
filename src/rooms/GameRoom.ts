@@ -1,7 +1,8 @@
 import { Room, Client } from "colyseus";
 import { customAlphabet } from 'nanoid'
 import { Duel, Player, Question, RoomState } from "./schema/RoomState";
-import { getRandomEmoji } from "./utils/emojis";
+import { getRandomEmoji } from "../utils/emojis";
+import { getRandomQueue } from "../utils/questions";
 
 const nanoid = customAlphabet('abcdefghijklmnoprstuwxyz', 6)
 
@@ -9,12 +10,18 @@ export class GameRoom extends Room<RoomState> {
   LOBBY_CHANNEL = "$epiclobby"
 
   REGULAR_WAIT_TIME = 10 * 1000;
+  QUESTION_AMOUNT = 7;
+  MAX_CLIENTS = 10;
 
   async onCreate (options: any) {
     this.roomId = await this.generateRoomId();
     this.setPrivate(true);
-    this.maxClients = 9;
-    this.setState(new RoomState());
+    this.maxClients = this.MAX_CLIENTS;
+
+    const state = new RoomState();
+    state.randomQuestionQueue = getRandomQueue(this.QUESTION_AMOUNT);
+    this.setState(state);
+
     console.log(`Game room ${this.roomId} created!`);
 
     this.onMessage("toggleReady", (client, ready) => {
@@ -68,6 +75,7 @@ export class GameRoom extends Room<RoomState> {
       const player = this.state.players.get(clientId);
       const isCorrect = answer === this.state.currentDuel.internalCorrectPlayerId;
       if (player) {
+        // do sumtn fun here....
         player.score += isCorrect ? 1 : 0;
       }
     });
@@ -101,6 +109,7 @@ export class GameRoom extends Room<RoomState> {
 
   showScoresAndEndGame() {
     this.unreadyPlayers();
+    this.state.finalScores.push(...this.state.players.values());
     this.state.screen = "scores";
     this.broadcast('showScores');
   }
@@ -142,9 +151,11 @@ export class GameRoom extends Room<RoomState> {
       this.state.host = client.sessionId;
     }
 
+    const name = options.nickname.substring(0, 15);
+
     const player = new Player();
     player.id = client.sessionId;
-    player.nickname = options.nickname;
+    player.nickname = name;
     player.emoji = getRandomEmoji();
     this.state.players.set(client.sessionId, player);
   }

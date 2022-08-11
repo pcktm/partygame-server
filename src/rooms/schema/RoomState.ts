@@ -1,4 +1,4 @@
-import { Schema, MapSchema, type } from "@colyseus/schema";
+import { Schema, MapSchema, ArraySchema, type } from "@colyseus/schema";
 import { Room, Client } from "colyseus";
 import { getRandomQueue } from "../../utils/questions";
 import lodash from 'lodash';
@@ -73,6 +73,9 @@ export class RoomState extends Schema {
   @type({map: Player})
   players = new MapSchema<Player>();
 
+  @type({array: Player})
+  finalScores = new ArraySchema<Player>();
+
   @type('string')
   screen: ('lobby' | 'duel' | 'questionAsked' | 'scores') = 'lobby';
 
@@ -83,7 +86,7 @@ export class RoomState extends Schema {
   currentDuel: Duel;
 
   internalDuels: Duel[] = [];
-  randomQuestionQueue = getRandomQueue();
+  randomQuestionQueue: string[] = [];
 
   constructor() {
     super();
@@ -102,6 +105,7 @@ export class RoomState extends Schema {
       const duel = new Duel();
       duel.internalCorrectPlayerId = first;
       duel.answer = this.currentQuestion.answers.get(first);
+      // pokazywać prawdziwe odpowiedzi dopiero pod koniec rundy
 
       if (Math.random() > 0.5) {
         duel.left = this.players.get(first);
