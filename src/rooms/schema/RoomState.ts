@@ -1,6 +1,5 @@
 import { Schema, MapSchema, ArraySchema, type } from "@colyseus/schema";
 import { Room, Client } from "colyseus";
-import { getRandomQueue } from "../../utils/questions";
 import lodash from 'lodash';
 
 export class Player extends Schema {
@@ -24,10 +23,19 @@ export class Question extends Schema {
   @type('string')
   text = '';
 
-  answers: Map<string, string> = new Map();
+  @type({map: 'string'})
+  answers = new MapSchema<string>();
+
+  internalAnswers: Map<string, string> = new Map();
 
   addAnswer(client: Client, answer: string) {
-    this.answers.set(client.sessionId, answer);
+    this.internalAnswers.set(client.sessionId, answer);
+  }
+
+  revealAnswers(){
+    this.internalAnswers.forEach((v, k) => {
+      this.answers.set(k, v);
+    });
   }
 
   constructor(question: string = '') {
@@ -51,14 +59,10 @@ export class Duel extends Schema {
 
   internalCorrectPlayerId: string;
 
-  @type('string')
-  correctPlayerId: string;
-
   @type({map: 'string'})
   votes = new MapSchema<string>();
 
   reveal() {
-    this.correctPlayerId = this.internalCorrectPlayerId;
     this.revealVotes = true;
   }
 }
@@ -77,7 +81,7 @@ export class RoomState extends Schema {
   finalScores = new ArraySchema<Player>();
 
   @type('string')
-  screen: ('lobby' | 'duel' | 'questionAsked' | 'scores') = 'lobby';
+  screen: ('lobby' | 'duel' | 'questionAsked' | 'scores' | 'whoSaidWhat') = 'lobby';
 
   @type(Question)
   currentQuestion: Question;
@@ -95,7 +99,7 @@ export class RoomState extends Schema {
 
   generateDuelQueue() {
     this.internalDuels = [];
-    const availablePlayers = lodash.shuffle(Array.from(this.currentQuestion.answers.keys()));
+    const availablePlayers = lodash.shuffle(Array.from(this.currentQuestion.internalAnswers.keys()));
     const duels: Duel[] = [];
 
     for (let i = 0; i < availablePlayers.length - 1; i += 1) {
@@ -104,7 +108,7 @@ export class RoomState extends Schema {
 
       const duel = new Duel();
       duel.internalCorrectPlayerId = first;
-      duel.answer = this.currentQuestion.answers.get(first);
+      duel.answer = this.currentQuestion.internalAnswers.get(first);
       // pokazywać prawdziwe odpowiedzi dopiero pod koniec rundy
 
       if (Math.random() > 0.5) {

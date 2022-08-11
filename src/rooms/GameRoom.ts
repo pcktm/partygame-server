@@ -2,16 +2,19 @@ import { Room, Client } from "colyseus";
 import { customAlphabet } from 'nanoid'
 import { Duel, Player, Question, RoomState } from "./schema/RoomState";
 import { getRandomEmoji } from "../utils/emojis";
-import { getRandomQueue } from "../utils/questions";
+import { getAllQuestions } from "../utils/questions";
+import lodash from 'lodash';
 
 const nanoid = customAlphabet('abcdefghijklmnoprstuwxyz', 6)
 
 export class GameRoom extends Room<RoomState> {
   LOBBY_CHANNEL = "$epiclobby"
 
-  REGULAR_WAIT_TIME = 10 * 1000;
-  QUESTION_AMOUNT = 7;
+  REGULAR_WAIT_TIME = 8 * 1000;
+  QUESTION_AMOUNT = 8;
   MAX_CLIENTS = 10;
+
+  allQuestions = getAllQuestions();
 
   async onCreate (options: any) {
     this.roomId = await this.generateRoomId();
@@ -19,7 +22,7 @@ export class GameRoom extends Room<RoomState> {
     this.maxClients = this.MAX_CLIENTS;
 
     const state = new RoomState();
-    state.randomQuestionQueue = getRandomQueue(this.QUESTION_AMOUNT);
+    state.randomQuestionQueue = this.getRandomQuestionQueue();
     this.setState(state);
 
     console.log(`Game room ${this.roomId} created!`);
@@ -64,9 +67,34 @@ export class GameRoom extends Room<RoomState> {
         this.unreadyPlayers();
         this.state.currentDuel.reveal();
         
-        await new Promise(resolve => setTimeout(resolve, this.REGULAR_WAIT_TIME));
+      }
+    })
+
+    this.onMessage('requestNextScreen', (client) => {
+      if (client.sessionId !== this.state.host) return;
+      if (this.state.screen === 'whoSaidWhat') {
+        this.beginNewRound();
+      }
+      if(this.state.screen === 'duel' && this.state.currentDuel?.revealVotes) {
         this.beginNextDuel();
       }
+    })
+
+    this.onMessage('restartGame', (client, message) => {
+      if(client.sessionId !== this.state.host) return;
+      const newState = new RoomState();
+      newState.host = this.state.host;
+      newState.randomQuestionQueue = this.getRandomQuestionQueue();
+      this.state.players.forEach((v, k) => {
+        const newPlayer = new Player();
+        newPlayer.id = k;
+        newPlayer.score = 0;
+        newPlayer.emoji = v.emoji;
+        newPlayer.nickname = v.nickname;
+        newState.players.set(k, newPlayer);
+      })
+      this.setState(newState);
+      this.unlock();
     })
   }
 
@@ -118,7 +146,8 @@ export class GameRoom extends Room<RoomState> {
     // if there are no more duels, end the round
     this.unreadyPlayers();
     if (this.state.internalDuels.length === 0) {
-      this.beginNewRound();
+      this.state.currentQuestion.revealAnswers();
+      this.state.screen = 'whoSaidWhat';
       return;
     }
     this.state.currentDuel = this.state.internalDuels.shift();
@@ -184,5 +213,15 @@ export class GameRoom extends Room<RoomState> {
 
     await this.presence.sadd(this.LOBBY_CHANNEL, id);
     return id;
-}
+  }
+
+  getRandomQuestionQueue(amount = this.QUESTION_AMOUNT) {
+    if (this.allQuestions.length < amount) {
+      console.warn("Not enough questions to generate a random queue, reloading all questions...");
+      this.allQuestions = getAllQuestions();
+    }
+    const q = this.allQuestions.slice(0, amount);
+    this.allQuestions = this.allQuestions.slice(amount);
+    return q;
+  }
 }
