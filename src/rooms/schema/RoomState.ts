@@ -122,7 +122,7 @@ export class RoomState extends Schema {
         duel.right = this.players.get(first);
       }
 
-      duels.push(duel);
+      if (duel.left !== undefined && duel.right !== undefined) duels.push(duel);
     }
     this.internalDuels = lodash.shuffle(duels);
   }
