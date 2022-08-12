@@ -1,22 +1,26 @@
-import { Room, Client } from "colyseus";
-import { customAlphabet } from 'nanoid'
-import { Duel, Player, Question, RoomState } from "./schema/RoomState";
-import { getRandomEmoji } from "../utils/emojis";
-import { getAllQuestions } from "../utils/questions";
+import {Room, Client} from 'colyseus';
+import {customAlphabet} from 'nanoid';
 import lodash from 'lodash';
+import {
+  Duel, Player, Question, RoomState,
+} from './schema/RoomState';
+import {getRandomEmoji} from '../utils/emojis';
+import {getAllQuestions} from '../utils/questions';
 
-const nanoid = customAlphabet('abcdefghijklmnoprstuwxyz', 6)
+const nanoid = customAlphabet('abcdefghijklmnoprstuwxyz', 6);
 
 export class GameRoom extends Room<RoomState> {
-  LOBBY_CHANNEL = "$epiclobby"
+  LOBBY_CHANNEL = '$epiclobby';
 
   REGULAR_WAIT_TIME = 8 * 1000;
+
   QUESTION_AMOUNT = 8;
+
   MAX_CLIENTS = 10;
 
   allQuestions = getAllQuestions();
 
-  async onCreate (options: any) {
+  async onCreate(options: never) {
     this.roomId = await this.generateRoomId();
     this.setPrivate(true);
     this.maxClients = this.MAX_CLIENTS;
@@ -27,9 +31,9 @@ export class GameRoom extends Room<RoomState> {
 
     console.log(`Game room ${this.roomId} created!`);
 
-    this.onMessage("toggleReady", (client, ready) => {
-      if (this.state.screen !== "lobby") return;
-      
+    this.onMessage('toggleReady', (client, ready) => {
+      if (this.state.screen !== 'lobby') return;
+
       const player = this.state.players.get(client.sessionId);
       if (player) {
         player.isReady = ready;
@@ -41,8 +45,8 @@ export class GameRoom extends Room<RoomState> {
       }
     });
 
-    this.onMessage("submitAnswer", (client, answer) => {
-      if (this.state.screen !== "questionAsked") return;
+    this.onMessage('submitAnswer', (client, answer) => {
+      if (this.state.screen !== 'questionAsked') return;
       const player = this.state.players.get(client.sessionId);
       if (player) {
         player.isReady = true;
@@ -52,10 +56,10 @@ export class GameRoom extends Room<RoomState> {
       if (this.areAllPlayersReady()) {
         this.beginDuels();
       }
-    })
+    });
 
-    this.onMessage("submitDuelChoice", async (client, answer) => {
-      if (this.state.screen !== "duel" || this.state.currentDuel.revealVotes) return;
+    this.onMessage('submitDuelChoice', async (client, answer) => {
+      if (this.state.screen !== 'duel' || this.state.currentDuel.revealVotes) return;
       const player = this.state.players.get(client.sessionId);
       if (player && !this.state.currentDuel.votes.has(client.sessionId)) {
         player.isReady = true;
@@ -66,22 +70,21 @@ export class GameRoom extends Room<RoomState> {
         this.updateScores();
         this.unreadyPlayers();
         this.state.currentDuel.reveal();
-        
       }
-    })
+    });
 
     this.onMessage('requestNextScreen', (client) => {
       if (client.sessionId !== this.state.host) return;
       if (this.state.screen === 'whoSaidWhat') {
         this.beginNewRound();
       }
-      if(this.state.screen === 'duel' && this.state.currentDuel?.revealVotes) {
+      if (this.state.screen === 'duel' && this.state.currentDuel?.revealVotes) {
         this.beginNextDuel();
       }
-    })
+    });
 
     this.onMessage('restartGame', (client, message) => {
-      if(client.sessionId !== this.state.host) return;
+      if (client.sessionId !== this.state.host) return;
       const newState = new RoomState();
       newState.host = this.state.host;
       newState.randomQuestionQueue = this.getRandomQuestionQueue();
@@ -92,10 +95,10 @@ export class GameRoom extends Room<RoomState> {
         newPlayer.emoji = v.emoji;
         newPlayer.nickname = v.nickname;
         newState.players.set(k, newPlayer);
-      })
+      });
       this.setState(newState);
       this.unlock();
-    })
+    });
   }
 
   updateScores() {
@@ -125,7 +128,7 @@ export class GameRoom extends Room<RoomState> {
 
     this.state.currentDuel = undefined;
     this.state.roundCount += 1;
-    this.state.screen = "questionAsked";
+    this.state.screen = 'questionAsked';
     this.state.currentQuestion = new Question(this.state.randomQuestionQueue.shift());
   }
 
@@ -138,7 +141,7 @@ export class GameRoom extends Room<RoomState> {
   showScoresAndEndGame() {
     this.unreadyPlayers();
     this.state.finalScores.push(...this.state.players.values());
-    this.state.screen = "scores";
+    this.state.screen = 'scores';
     this.broadcast('showScores');
   }
 
@@ -157,7 +160,7 @@ export class GameRoom extends Room<RoomState> {
 
   areAllPlayersReady() {
     let allReady = true;
-    this.state.players.forEach(player => {
+    this.state.players.forEach((player) => {
       if (!player.isReady) {
         allReady = false;
       }
@@ -166,13 +169,16 @@ export class GameRoom extends Room<RoomState> {
   }
 
   unreadyPlayers() {
-    this.state.players.forEach(player => {
-      player.isReady = false;
-    });
+    for (const playerId of this.state.players.keys()) {
+      const player = this.state.players.get(playerId);
+      if (player) {
+        player.isReady = false;
+      }
+    }
     this.broadcastPatch();
   }
 
-  onJoin (client: Client, options: any) {
+  onJoin(client: Client, options: {nickname: string}) {
     console.log(`${client.sessionId}, ${options.nickname} joined!`);
 
     // the first player to join is the host
@@ -189,8 +195,8 @@ export class GameRoom extends Room<RoomState> {
     this.state.players.set(client.sessionId, player);
   }
 
-  onLeave (client: Client, consented: boolean) {
-    console.log(client.sessionId, "left!");
+  onLeave(client: Client, consented: boolean) {
+    console.log(client.sessionId, 'left!');
     this.state.players.delete(client.sessionId);
 
     // if it were the host, pick a new host
@@ -200,7 +206,7 @@ export class GameRoom extends Room<RoomState> {
   }
 
   onDispose() {
-    console.log("room", this.roomId, "disposing...");
+    console.log('room', this.roomId, 'disposing...');
     this.presence.srem(this.LOBBY_CHANNEL, this.roomId);
   }
 
@@ -208,7 +214,7 @@ export class GameRoom extends Room<RoomState> {
     const currentIds = await this.presence.smembers(this.LOBBY_CHANNEL);
     let id;
     do {
-        id = nanoid();
+      id = nanoid();
     } while (currentIds.includes(id));
 
     await this.presence.sadd(this.LOBBY_CHANNEL, id);
@@ -217,7 +223,7 @@ export class GameRoom extends Room<RoomState> {
 
   getRandomQuestionQueue(amount = this.QUESTION_AMOUNT) {
     if (this.allQuestions.length < amount) {
-      console.warn("Not enough questions to generate a random queue, reloading all questions...");
+      console.warn('Not enough questions to generate a random queue, reloading all questions...');
       this.allQuestions = getAllQuestions();
     }
     const q = this.allQuestions.slice(0, amount);

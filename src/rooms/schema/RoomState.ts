@@ -1,30 +1,32 @@
-import { Schema, MapSchema, ArraySchema, type } from "@colyseus/schema";
-import { Room, Client } from "colyseus";
+import {
+  Schema, MapSchema, ArraySchema, type,
+} from '@colyseus/schema';
+import {Room, Client} from 'colyseus';
 import lodash from 'lodash';
 
 export class Player extends Schema {
   @type('string')
-  id: string;
+    id: string;
 
   @type('string')
-  nickname = '';
+    nickname = '';
 
   @type('string')
-  emoji = '🙈';
+    emoji = '🙈';
 
   @type('boolean')
-  isReady = false;
+    isReady = false;
 
   @type('number')
-  score = 0;
+    score = 0;
 }
 
 export class Question extends Schema {
   @type('string')
-  text = '';
+    text = '';
 
   @type({map: 'string'})
-  answers = new MapSchema<string>();
+    answers = new MapSchema<string>();
 
   internalAnswers: Map<string, string> = new Map();
 
@@ -32,13 +34,13 @@ export class Question extends Schema {
     this.internalAnswers.set(client.sessionId, answer);
   }
 
-  revealAnswers(){
+  revealAnswers() {
     this.internalAnswers.forEach((v, k) => {
       this.answers.set(k, v);
     });
   }
 
-  constructor(question: string = '') {
+  constructor(question = '') {
     super();
     this.text = question;
   }
@@ -46,21 +48,21 @@ export class Question extends Schema {
 
 export class Duel extends Schema {
   @type('string')
-  answer: string;
+    answer: string;
 
   @type(Player)
-  left?: Player;
+    left?: Player;
 
   @type(Player)
-  right?: Player;
+    right?: Player;
 
   @type('boolean')
-  revealVotes = false;
+    revealVotes = false;
 
   internalCorrectPlayerId: string;
 
   @type({map: 'string'})
-  votes = new MapSchema<string>();
+    votes = new MapSchema<string>();
 
   reveal() {
     this.revealVotes = true;
@@ -69,27 +71,28 @@ export class Duel extends Schema {
 
 export class RoomState extends Schema {
   @type('string')
-  host: string;
+    host: string;
 
   @type('number')
-  roundCount = 0;
+    roundCount = 0;
 
   @type({map: Player})
-  players = new MapSchema<Player>();
+    players = new MapSchema<Player>();
 
   @type({array: Player})
-  finalScores = new ArraySchema<Player>();
+    finalScores = new ArraySchema<Player>();
 
   @type('string')
-  screen: ('lobby' | 'duel' | 'questionAsked' | 'scores' | 'whoSaidWhat') = 'lobby';
+    screen: ('lobby' | 'duel' | 'questionAsked' | 'scores' | 'whoSaidWhat') = 'lobby';
 
   @type(Question)
-  currentQuestion: Question;
+    currentQuestion: Question;
 
   @type(Duel)
-  currentDuel: Duel;
+    currentDuel: Duel;
 
   internalDuels: Duel[] = [];
+
   randomQuestionQueue: string[] = [];
 
   constructor() {
@@ -123,5 +126,4 @@ export class RoomState extends Schema {
     }
     this.internalDuels = lodash.shuffle(duels);
   }
-
 }
