@@ -10,7 +10,6 @@
     "experimentalDecorators": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "baseUrl": "."
   },
   "include": [
     "src", ".eslintrc.js"

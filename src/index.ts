@@ -6,20 +6,23 @@ import {monitor} from '@colyseus/monitor';
 import cors from 'cors';
 import {GameRoom} from './rooms/GameRoom';
 import {index} from './routes';
+import {httpLogger, logger} from './utils/loggers';
 
 const port = Number(process.env.port) || 4000;
 
 const app = express();
 const server = createServer(app);
+app.disable('x-powered-by');
 
+app.use(httpLogger());
 app.use(cors({
   origin: (origin, callback) => {
     callback(null, true);
   },
 }));
 app.use(express.json());
-app.use('/colyseus', monitor());
 
+app.use('/colyseus', monitor());
 app.use('/', index);
 
 const gameServer = new Server({
@@ -33,4 +36,4 @@ gameServer.define('game_room', GameRoom);
 
 gameServer.listen(port);
 
-console.log(`Listening on http://localhost:${port}`);
+logger.info({port, environment: process.env.NODE_ENV}, 'server started');

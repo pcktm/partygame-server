@@ -1,6 +1,9 @@
 import {Room, Client} from 'colyseus';
 import {customAlphabet} from 'nanoid';
 import lodash from 'lodash';
+import {IncomingMessage} from 'http';
+import UAParser from 'ua-parser-js';
+import {logger} from '../utils/loggers';
 import {
   Duel, Player, Question, RoomState,
 } from './schema/RoomState';
@@ -29,7 +32,7 @@ export class GameRoom extends Room<RoomState> {
     state.randomQuestionQueue = this.getRandomQuestionQueue();
     this.setState(state);
 
-    console.log(`Game room ${this.roomId} created!`);
+    logger.info({id: this.roomId}, 'created room');
 
     this.onMessage('toggleReady', (client, ready) => {
       if (this.state.screen !== 'lobby') return;
@@ -113,7 +116,7 @@ export class GameRoom extends Room<RoomState> {
   }
 
   startGame() {
-    console.log(`Starting game in room ${this.roomId}`);
+    logger.info({roomId: this.roomId}, 'starting game');
     this.lock();
     this.beginNewRound();
   }
@@ -179,8 +182,6 @@ export class GameRoom extends Room<RoomState> {
   }
 
   onJoin(client: Client, options: {nickname: string}) {
-    console.log(`${client.sessionId}, ${options.nickname} joined!`);
-
     // the first player to join is the host
     if (!this.state.host) {
       this.state.host = client.sessionId;
@@ -195,8 +196,25 @@ export class GameRoom extends Room<RoomState> {
     this.state.players.set(client.sessionId, player);
   }
 
+  onAuth(client: Client, options: {nickname: string}, request?: IncomingMessage) {
+    const browser = UAParser(request.headers['user-agent']);
+    logger.info({
+      roomId: this.roomId,
+      clientId: client.sessionId,
+      nickname: options.nickname,
+      remoteAddress: request.socket.remoteAddress,
+      browser: `${browser.browser.name} ${browser.browser.version}`,
+      os: `${browser.os.name} ${browser.os.version}`,
+    }, 'client authenticated');
+    return true;
+  }
+
   onLeave(client: Client, consented: boolean) {
-    console.log(client.sessionId, 'left!');
+    logger.info({
+      roomId: this.roomId,
+      clientId: client.sessionId,
+      consented,
+    }, 'client left');
     this.state.players.delete(client.sessionId);
 
     // if it were the host, pick a new host
@@ -206,7 +224,7 @@ export class GameRoom extends Room<RoomState> {
   }
 
   onDispose() {
-    console.log('room', this.roomId, 'disposing...');
+    logger.info({roomId: this.roomId}, 'room disposed');
     this.presence.srem(this.LOBBY_CHANNEL, this.roomId);
   }
 
@@ -223,7 +241,7 @@ export class GameRoom extends Room<RoomState> {
 
   getRandomQuestionQueue(amount = this.QUESTION_AMOUNT) {
     if (this.allQuestions.length < amount) {
-      console.warn('Not enough questions to generate a random queue, reloading all questions...');
+      logger.warn({roomId: this.roomId}, 'Not enough questions to generate a random queue, reloading all questions...');
       this.allQuestions = getAllQuestions();
     }
     const q = this.allQuestions.slice(0, amount);
