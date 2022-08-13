@@ -1,8 +1,8 @@
 import {Room, Client} from 'colyseus';
 import {customAlphabet} from 'nanoid';
-import lodash from 'lodash';
 import {IncomingMessage} from 'http';
 import UAParser from 'ua-parser-js';
+import {MapSchema} from '@colyseus/schema';
 import {logger} from '../utils/loggers';
 import {
   Duel, Player, Question, RoomState,
@@ -17,7 +17,7 @@ export class GameRoom extends Room<RoomState> {
 
   REGULAR_WAIT_TIME = 8 * 1000;
 
-  QUESTION_AMOUNT = 8;
+  QUESTION_AMOUNT = 4;
 
   MAX_CLIENTS = 12;
 
@@ -53,7 +53,7 @@ export class GameRoom extends Room<RoomState> {
       const player = this.state.players.get(client.sessionId);
       if (player) {
         player.isReady = true;
-        this.state.currentQuestion.addAnswer(client, answer);
+        this.state.currentQuestion.addAnswer(client, answer.substring(0, 35));
       }
       // if all players submitted answers
       if (this.areAllPlayersReady()) {
@@ -71,7 +71,6 @@ export class GameRoom extends Room<RoomState> {
 
       if (this.areAllPlayersReady()) {
         this.updateScores();
-        this.unreadyPlayers();
         this.state.currentDuel.reveal();
       }
     });
@@ -91,28 +90,29 @@ export class GameRoom extends Room<RoomState> {
       const newState = new RoomState();
       newState.host = this.state.host;
       newState.randomQuestionQueue = this.getRandomQuestionQueue();
-      this.state.players.forEach((v, k) => {
-        const newPlayer = new Player();
-        newPlayer.id = k;
+      for (const [playerId, player] of this.state.players.entries()) {
+        const newPlayer = player.clone();
         newPlayer.score = 0;
-        newPlayer.emoji = v.emoji;
-        newPlayer.nickname = v.nickname;
-        newState.players.set(k, newPlayer);
-      });
+        newPlayer.isReady = false;
+        newState.players.set(playerId, newPlayer);
+      }
       this.setState(newState);
       this.unlock();
     });
   }
 
   updateScores() {
-    this.state.currentDuel.votes.forEach((answer, clientId) => {
+    let index = 0;
+    for (const [clientId, answer] of this.state.currentDuel.votes.entries()) {
+      const isCorrect = this.state.currentDuel.internalCorrectPlayerId === answer;
       const player = this.state.players.get(clientId);
-      const isCorrect = answer === this.state.currentDuel.internalCorrectPlayerId;
-      if (player) {
-        // do sumtn fun here....
+      if (isCorrect && player) {
         player.score += isCorrect ? 1 : 0;
+        // the first one to guess correctly gets a bonus
+        if (index === 0) player.score += 1;
       }
-    });
+      index += 1;
+    }
   }
 
   startGame() {
@@ -122,8 +122,6 @@ export class GameRoom extends Room<RoomState> {
   }
 
   beginNewRound() {
-    this.unreadyPlayers();
-
     if (this.state.randomQuestionQueue.length === 0) {
       this.showScoresAndEndGame();
       return;
@@ -133,16 +131,15 @@ export class GameRoom extends Room<RoomState> {
     this.state.roundCount += 1;
     this.state.screen = 'questionAsked';
     this.state.currentQuestion = new Question(this.state.randomQuestionQueue.shift());
+    this.unreadyPlayers();
   }
 
   beginDuels() {
-    this.unreadyPlayers();
     this.state.generateDuelQueue();
     this.beginNextDuel();
   }
 
   showScoresAndEndGame() {
-    this.unreadyPlayers();
     this.state.finalScores.push(...this.state.players.values());
     this.state.screen = 'scores';
     this.broadcast('showScores');
@@ -150,12 +147,13 @@ export class GameRoom extends Room<RoomState> {
 
   beginNextDuel() {
     // if there are no more duels, end the round
-    this.unreadyPlayers();
     if (this.state.internalDuels.length === 0) {
       this.state.currentQuestion.revealAnswers();
       this.state.screen = 'whoSaidWhat';
       return;
     }
+
+    this.unreadyPlayers();
     this.state.currentDuel = this.state.internalDuels.shift();
     this.state.screen = 'duel';
     this.broadcast('beginNewDuel');
@@ -172,13 +170,13 @@ export class GameRoom extends Room<RoomState> {
   }
 
   unreadyPlayers() {
-    for (const playerId of this.state.players.keys()) {
-      const player = this.state.players.get(playerId);
-      if (player) {
-        player.isReady = false;
-      }
+    const players = new MapSchema<Player>();
+    for (const [id, player] of this.state.players.entries()) {
+      const newPlayer = player.clone();
+      newPlayer.isReady = false;
+      players.set(id, newPlayer);
     }
-    this.broadcastPatch();
+    this.state.players = players;
   }
 
   onJoin(client: Client, options: {nickname: string}) {
@@ -202,7 +200,7 @@ export class GameRoom extends Room<RoomState> {
       roomId: this.roomId,
       clientId: client.sessionId,
       nickname: options.nickname,
-      remoteAddress: request.socket.remoteAddress,
+      remoteAddress: request.headers['x-forwarded-for'] ?? request.socket.remoteAddress,
       browser: `${browser.browser.name} ${browser.browser.version}`,
       os: `${browser.os.name} ${browser.os.version}`,
     }, 'client authenticated');

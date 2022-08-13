@@ -13,6 +13,7 @@ const port = Number(process.env.port) || 4000;
 const app = express();
 const server = createServer(app);
 app.disable('x-powered-by');
+app.set('trust proxy', 'loopback');
 
 app.use(httpLogger());
 app.use(cors({

@@ -64,6 +64,8 @@ export class Duel extends Schema {
   @type({map: 'string'})
     votes = new MapSchema<string>();
 
+  startTime = Date.now();
+
   reveal() {
     this.revealVotes = true;
   }
