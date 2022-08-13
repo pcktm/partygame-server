@@ -8,7 +8,7 @@ import {
   Duel, Player, Question, RoomState,
 } from './schema/RoomState';
 import {getRandomEmoji} from '../utils/emojis';
-import {getAllQuestions} from '../utils/questions';
+import {getShuffledQuestions} from '../utils/questions';
 
 const nanoid = customAlphabet('abcdefghijklmnoprstuwxyz', 6);
 
@@ -21,7 +21,7 @@ export class GameRoom extends Room<RoomState> {
 
   MAX_CLIENTS = 12;
 
-  allQuestions = getAllQuestions();
+  allQuestions = getShuffledQuestions();
 
   async onCreate(options: never) {
     this.roomId = await this.generateRoomId();
@@ -240,7 +240,7 @@ export class GameRoom extends Room<RoomState> {
   getRandomQuestionQueue(amount = this.QUESTION_AMOUNT) {
     if (this.allQuestions.length < amount) {
       logger.warn({roomId: this.roomId}, 'Not enough questions to generate a random queue, reloading all questions...');
-      this.allQuestions = getAllQuestions();
+      this.allQuestions = getShuffledQuestions();
     }
     const q = this.allQuestions.slice(0, amount);
     this.allQuestions = this.allQuestions.slice(amount);

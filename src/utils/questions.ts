@@ -36,9 +36,34 @@ export const questions = [
   'Twoje ulubione określenie na zioło?',
   'Jak nazwałbyś swojego psa?',
   'Oprócz loda, środa to dzień...?',
-  // AGH
-  'Jaka osoba na roku najbardziej działa ci na nerwy?',
-  'Prowadzący którego nikt nie lubi oprócz ciebie?',
+  'Najbardziej egzotyczny narkotyk jakiego próbowałeś?',
+  'Możesz zrobić coś całkowicie nielegalnego - co robisz?',
+  'Co staje się lepsze z wiekiem?',
+  'Są wyniki! Nową maskotką twojej uczelni zostaje...',
+  'Nie ma takiej rzeczy jak...',
+  'Co ukrywasz przed swoimi rodzicami?',
+  'Co jest moją supermocą?',
+  'Co jest najgorszą rzeczą która może się zdarzyć?',
+  'Gdy jestem pijany, to uważam się za eksperta w ...?',
+  'Dlaczego jesteś taki, jaki jesteś?',
+  'Mam dużo problemów, ale jednym z nich nie jest...?',
+  'Co nigdy nie zawodzi jeśli trzeba rozkręcić imprezę?',
+  'Tylko dwie rzeczy są pewne w życiu: śmierć i ...?',
+  'Nauka nigdy nie wyjaśni...?',
+  'Co jest najlepszym przyjacielem kobiety?',
+  'Co zamiast rózgi Święty Mikołaj zaczął rozdawać niegrzecznym dzieciom?',
+  'Białasy lubią...',
+  'Co naprawdę ssie?',
+  'Hej mała, chodźmy do mnie to pokażę ci ___',
+  'Twoja stara jest taka gruba że ___!',
+  'Każdy problem można rozwiązać przy pomocy wystarczającej ilości ___',
+  'Pierwsza randka, kawa. Druga randka, całus. Trzecia randka, ___',
+  'Czym rekompensuję sobie mojego małego penisa?',
+  'Uuu, tatuś lubi ___',
+  'Cóż, jeśli ___ jest przestępstwem, to mnie zamknijcie!',
+  'Co sprawia najwięcej problemów?',
+  'Co sprawia, że jestem mokra?',
+  'Jak ksywkę dałem swoim genitaliom?',
 ];
 
 export const getRandomQueue = (queueLength = 8) => {
@@ -46,4 +71,4 @@ export const getRandomQueue = (queueLength = 8) => {
   return q.slice(0, queueLength);
 };
 
-export const getAllQuestions = () => lodash.shuffle(questions);
+export const getShuffledQuestions = () => lodash.shuffle(questions);
