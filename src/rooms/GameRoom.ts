@@ -14,9 +14,9 @@ export class GameRoom extends Room<RoomState> {
 
   REGULAR_WAIT_TIME = 8 * 1000;
 
-  QUESTION_AMOUNT = 1;
+  QUESTION_AMOUNT = 8;
 
-  MAX_CLIENTS = 10;
+  MAX_CLIENTS = 12;
 
   allQuestions = getAllQuestions();
 

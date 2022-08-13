@@ -32,3 +32,5 @@ const gameServer = new Server({
 gameServer.define('game_room', GameRoom);
 
 gameServer.listen(port);
+
+console.log(`Listening on http://localhost:${port}`);
