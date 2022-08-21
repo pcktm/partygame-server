@@ -17,7 +17,7 @@ export class GameRoom extends Room<RoomState> {
 
   REGULAR_WAIT_TIME = 8 * 1000;
 
-  QUESTION_AMOUNT = 4;
+  QUESTION_AMOUNT = 7;
 
   MAX_CLIENTS = 12;
 
@@ -66,7 +66,17 @@ export class GameRoom extends Room<RoomState> {
       const player = this.state.players.get(client.sessionId);
       if (player && !this.state.currentDuel.votes.has(client.sessionId)) {
         player.isReady = true;
-        this.state.currentDuel.votes.set(client.sessionId, answer);
+
+        if (!answer) {
+          client.send('pushToast', {
+            title: 'Invalid choice',
+            description: 'Something went wrong, defaulting to left choice',
+            type: 'error',
+          });
+          logger.error({roomId: this.roomId, clientId: client.sessionId, choice: answer}, 'invalid answer');
+        }
+
+        this.state.currentDuel.votes.set(client.sessionId, answer ?? this.state.currentDuel.left.id);
       }
 
       if (this.areAllPlayersReady()) {
@@ -98,6 +108,10 @@ export class GameRoom extends Room<RoomState> {
       }
       this.setState(newState);
       this.unlock();
+      this.broadcast('pushToast', {
+        description: 'Game restarted',
+        type: 'success',
+      });
     });
   }
 
@@ -143,6 +157,7 @@ export class GameRoom extends Room<RoomState> {
     this.state.finalScores.push(...this.state.players.values());
     this.state.screen = 'scores';
     this.broadcast('showScores');
+    logger.info({roomId: this.roomId}, 'game ended');
   }
 
   beginNextDuel() {
