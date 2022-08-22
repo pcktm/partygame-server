@@ -187,9 +187,8 @@ export class GameRoom extends Room<RoomState> {
   unreadyPlayers() {
     const players = new MapSchema<Player>();
     for (const [id, player] of this.state.players.entries()) {
-      const newPlayer = player.clone();
-      newPlayer.isReady = false;
-      players.set(id, newPlayer);
+      player.isReady = false;
+      players.set(id, player);
     }
     this.state.players = players;
   }
