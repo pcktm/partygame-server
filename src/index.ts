@@ -7,6 +7,7 @@ import cors from 'cors';
 import {GameRoom} from './rooms/GameRoom';
 import {index} from './routes';
 import {httpLogger, logger} from './utils/loggers';
+import {questions} from './utils/questions';
 
 const port = Number(process.env.port) || 4000;
 
@@ -37,4 +38,9 @@ gameServer.define('game_room', GameRoom);
 
 gameServer.listen(port);
 
-logger.info({port, environment: process.env.NODE_ENV}, 'server started');
+logger.info({
+  port,
+  environment: process.env.NODE_ENV,
+  version: process.env.npm_package_version ?? 'unavailable',
+  questionsAmount: questions.length,
+}, 'server started');

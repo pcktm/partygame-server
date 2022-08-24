@@ -1,6 +1,7 @@
 import {Room, Client} from 'colyseus';
 import {customAlphabet} from 'nanoid';
 import {IncomingMessage} from 'http';
+import lodash from 'lodash';
 import UAParser from 'ua-parser-js';
 import {MapSchema} from '@colyseus/schema';
 import {logger} from '../utils/loggers';
@@ -29,7 +30,6 @@ export class GameRoom extends Room<RoomState> {
     this.maxClients = this.MAX_CLIENTS;
 
     const state = new RoomState();
-    state.randomQuestionQueue = this.getRandomQuestionQueue();
     this.setState(state);
 
     logger.info({id: this.roomId}, 'created room');
@@ -45,6 +45,12 @@ export class GameRoom extends Room<RoomState> {
       // check if all players are ready and start game
       if (this.state.players.size > 1 && this.areAllPlayersReady()) {
         this.startGame();
+      } else if (this.state.players.size === 1 && player.isReady) {
+        client.send('pushToast', {
+          type: 'info',
+          title: 'Invite your friends!',
+          description: 'You need at least 2 players to play',
+        });
       }
     });
 
@@ -99,7 +105,6 @@ export class GameRoom extends Room<RoomState> {
       if (client.sessionId !== this.state.host) return;
       const newState = new RoomState();
       newState.host = this.state.host;
-      newState.randomQuestionQueue = this.getRandomQuestionQueue();
       for (const [playerId, player] of this.state.players.entries()) {
         const newPlayer = player.clone();
         newPlayer.score = 0;
@@ -131,6 +136,7 @@ export class GameRoom extends Room<RoomState> {
 
   startGame() {
     logger.info({roomId: this.roomId}, 'starting game');
+    this.state.randomQuestionQueue = this.getRandomQuestionQueue();
     this.lock();
     this.beginNewRound();
   }
@@ -258,6 +264,20 @@ export class GameRoom extends Room<RoomState> {
     }
     const q = this.allQuestions.slice(0, amount);
     this.allQuestions = this.allQuestions.slice(amount);
-    return q;
+
+    const mapped = q.map((question) => {
+      const replacements = (question.match(/\[PLAYER\]/g) || []).length;
+      let temp = question;
+      if (replacements > 0) {
+        const keys = lodash.sampleSize(Array.from(this.state.players.keys()), replacements);
+        const players = keys.map((k) => this.state.players.get(k));
+        for (const player of players) {
+          temp = temp.replace('[PLAYER]', `${player.emoji} ${player.nickname}`);
+        }
+      }
+      return temp;
+    });
+
+    return mapped;
   }
 }
