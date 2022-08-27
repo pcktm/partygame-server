@@ -1,0 +1,30 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Question {
+  id  String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  text String
+  minPlayers Int @default(0)
+  deckId String @db.Uuid
+  deck Deck @relation(fields: [deckId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+}
+
+model Deck {
+  id  String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name String
+  emoji String
+  isExplicit Boolean @default(false)
+  language String @default("en")
+  questions Question[]
+  createdAt DateTime @default(now())
+}

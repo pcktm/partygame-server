@@ -1,93 +1,23 @@
+import {PrismaClient} from '@prisma/client';
 import lodash from 'lodash';
 
-export const questions = [
-  'Jaki jest twój ulubiony zapach?',
-  'Najważniejszą rzeczą w potencjalnym partnerze jest?',
-  'Twoja ulubiona postać z bajki?',
-  'Musisz zaśpiewać karaoke, jaką piosenkę wybierasz?',
-  'Jeśli miałbyś stać się sławny, to za co?',
-  'Możesz jeść tylko jedno danie do końca życia, jakie?',
-  'Jaki byłby tytuł twojej autobiografii?',
-  'Jaki jest twój największy lęk?',
-  'Chcesz upiec najgorsze ciastka pod słońcem, jaki wybierasz smak?',
-  'Jakiego emoji używasz najczęściej?',
-  'Dokończ zdanie: Chciałabym, żeby każdy mógł...',
-  'Oprócz owadów i pająków, jakie zwierzęta najbardziej Cię denerwują?',
-  'Gdzie pieniądze są za las?',
-  'Jaką muzykę grałby twój zespół?',
-  'Jaką chciałbyś mieć supermoc?',
-  'Jaki film obejrzałeś najwięcej razy?',
-  'O spełnienie jakiego marzenia poprosiłbyś złotą rybkę?',
-  'Jaka jest pierwsza rzecz, którą robisz rano?',
-  'Jedzenie, które wszyscy lubią, a ty nie?',
-  'Co przedstawiał twój ostatni rysunek?',
-  'Ile lat chciałbyś żyć?',
-  'Na jaką stronę internetową najczęściej wchodzisz?',
-  'Twój największy celebrity crush?',
-  'Co przedstawia osatnie zdjęcie w Twojej galerii?',
-  'Gdybyś mógł nauczyć się jednego języka w jeden dzień, jaki by to był?',
-  'Gdybyś mógł zakazać jednej rzeczy w Polsce - co by to było?',
-  'Ulubiony fanpage na FB?',
-  'Na co masz teraz ochotę?',
-  'Co zrobiłbyś teraz z [PLAYER]?',
-  'Co kupisz, jeśli byłoby cię stać na wszystko?',
-  'Wymyśl sobie jakąś ksywkę - jaka byłaby?',
-  'Kto z was jest najbardziej agresywny?',
-  'Twój sekretny ulubiony wykonawca?',
-  'Twoje ulubione określenie na zioło?',
-  'Jak nazwałbyś swojego psa?',
-  'Oprócz loda, środa to dzień...?',
-  'Najbardziej egzotyczny narkotyk jakiego próbowałeś?',
-  'Możesz zrobić coś całkowicie nielegalnego - co robisz?',
-  'Co staje się lepsze z wiekiem?',
-  'Są wyniki! Nową maskotką twojej uczelni zostaje...',
-  'Nie ma takiej rzeczy jak...',
-  'Co ukrywasz przed swoimi rodzicami?',
-  'Co jest moją supermocą?',
-  'Co jest najgorszą rzeczą która może się zdarzyć?',
-  'Gdy [PLAYER] jest pijany, to uważa za eksperta w ...?',
-  'Dlaczego jesteś taki, jaki jesteś?',
-  'Mam dużo problemów, ale jednym z nich nie jest...?',
-  'Co nigdy nie zawodzi jeśli trzeba rozkręcić imprezę?',
-  'Tylko dwie rzeczy są pewne w życiu: śmierć i ...?',
-  'Nauka nigdy nie wyjaśni...?',
-  'Co jest najlepszym przyjacielem kobiety?',
-  'Co zamiast rózgi Święty Mikołaj zaczął rozdawać niegrzecznym dzieciom?',
-  'Białasy lubią...',
-  'Co naprawdę ssie?',
-  'Hej mała, chodźmy do mnie to pokażę ci ___',
-  'Twoja stara jest taka gruba że ___!',
-  'Każdy problem można rozwiązać przy pomocy wystarczającej ilości ___',
-  'Pierwsza randka, kawa. Druga randka, całus. Trzecia randka, ___',
-  'Czym rekompensuję sobie mojego małego penisa?',
-  'Uuu, tatuś lubi ___',
-  'Cóż, jeśli ___ jest przestępstwem, to mnie zamknijcie!',
-  'Co sprawia [PLAYER] najwięcej problemów?',
-  'Jak ksywkę [PLAYER] dał swoim genitaliom?',
-  'Najbardziej w [PLAYER] podoba mi się...',
-  'Co [PLAYER] najbardziej lubi w [PLAYER]?',
-  'Jaka jest rzecz, którą mógłbyś zrobić z [PLAYER] za 5 złotych?',
-  'Gdybyś mógł cofnąć się w czasie i wymazać jedną rzecz, co by to było?',
-  'Co jest czymś, co zrobiłeś, aby spróbować być "fajniejszym"?',
-  'Jak wygląda Twoja ulubiona piżama?',
-  'Jaką cechą najchętniej wymieniłbyś się z [PLAYER]?',
-  'Kogo nie chciałbyś zobaczyć nago?',
-  'Jakie było twoje pierwsze wrażenie na temat [PLAYER]?',
-  'Co najbardziej kręci [PLAYER]?',
-  'Czego [PLAYER] najbardziej zazdrości [PLAYER]?',
-  'Gdyby [PLAYER] był potrawą, to czym by był i jak byś go zjadł?',
-  'Kto tutaj jest według ciebie najlepszym flirciarzem?',
-  'Jaka jest jedna rzecz, której nigdy nie zrobiłbyś przy [PLAYER]?',
-  'Gdybyś mógł mieć jedną cechę fizyczną kogoś w tym pokoju, co by to było?',
-  'Jaka jest najbardziej żenująca rzecz, na której przyłapali cię rodzice?',
-  'Jakie jest największe kłamstwo, które uszło ci na sucho?',
-  'Kto ma najładniejszy tyłek w tym pokoju?',
-  'Wymień najdziwniejsze miejsce, w którym sikałeś.',
-];
-
-export const getRandomQueue = (queueLength = 8) => {
-  const q = lodash.shuffle(questions);
-  return q.slice(0, queueLength);
+type RequestOptions = {
+  decks: string[];
+  minPlayers?: number;
 };
 
-export const getShuffledQuestions = () => lodash.shuffle(questions);
+const db = new PrismaClient();
+
+export const getShuffledQuestions = async (options: RequestOptions) => {
+  const questions = await db.question.findMany({
+    where: {
+      deckId: {
+        in: options.decks,
+      },
+      minPlayers: {
+        lte: options.minPlayers ?? 0,
+      },
+    },
+  });
+  return lodash.shuffle(questions);
+};

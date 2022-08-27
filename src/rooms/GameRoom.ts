@@ -1,12 +1,14 @@
+/* eslint-disable no-promise-executor-return */
 import {Room, Client} from 'colyseus';
 import {customAlphabet} from 'nanoid';
 import {IncomingMessage} from 'http';
 import lodash from 'lodash';
 import UAParser from 'ua-parser-js';
+import {Question as DatabaseQuestion} from '@prisma/client';
 import {MapSchema} from '@colyseus/schema';
 import {logger} from '../utils/loggers';
 import {
-  Duel, Player, Question, RoomState,
+  Duel, Player, Question as StateQuestion, RoomState,
 } from './schema/RoomState';
 import {getRandomEmoji} from '../utils/emojis';
 import {getShuffledQuestions} from '../utils/questions';
@@ -16,13 +18,13 @@ const nanoid = customAlphabet('abcdefghijklmnoprstuwxyz', 6);
 export class GameRoom extends Room<RoomState> {
   LOBBY_CHANNEL = '$epiclobby';
 
-  REGULAR_WAIT_TIME = 8 * 1000;
+  QUESTION_AMOUNT = Number(process.env.DEFEND_QUESTION_AMOUNT) || 8;
 
-  QUESTION_AMOUNT = 7;
+  MAX_CLIENTS = Number(process.env.MAX_ALLOWED_CLIENTS) || 12;
 
-  MAX_CLIENTS = 12;
+  selectedDecks: string[] = [process.env.DEFAULT_DECK_ID ?? ''];
 
-  allQuestions = getShuffledQuestions();
+  allQuestions: DatabaseQuestion[] = [];
 
   async onCreate(options: never) {
     this.roomId = await this.generateRoomId();
@@ -103,21 +105,25 @@ export class GameRoom extends Room<RoomState> {
 
     this.onMessage('restartGame', (client, message) => {
       if (client.sessionId !== this.state.host) return;
-      const newState = new RoomState();
-      newState.host = this.state.host;
-      for (const [playerId, player] of this.state.players.entries()) {
-        const newPlayer = player.clone();
-        newPlayer.score = 0;
-        newPlayer.isReady = false;
-        newState.players.set(playerId, newPlayer);
-      }
-      this.setState(newState);
-      this.unlock();
+      this.restartRoom();
       this.broadcast('pushToast', {
         description: 'Game restarted',
         type: 'success',
       });
     });
+  }
+
+  restartRoom() {
+    const newState = new RoomState();
+    newState.host = this.state.host;
+    for (const [playerId, player] of this.state.players.entries()) {
+      const newPlayer = player.clone();
+      newPlayer.score = 0;
+      newPlayer.isReady = false;
+      newState.players.set(playerId, newPlayer);
+    }
+    this.setState(newState);
+    this.unlock();
   }
 
   updateScores() {
@@ -134,9 +140,9 @@ export class GameRoom extends Room<RoomState> {
     }
   }
 
-  startGame() {
+  async startGame() {
     logger.info({roomId: this.roomId}, 'starting game');
-    this.state.randomQuestionQueue = this.getRandomQuestionQueue();
+    this.state.randomQuestionQueue = await this.getRandomQuestionQueue();
     this.lock();
     this.beginNewRound();
   }
@@ -150,7 +156,7 @@ export class GameRoom extends Room<RoomState> {
     this.state.currentDuel = undefined;
     this.state.roundCount += 1;
     this.state.screen = 'questionAsked';
-    this.state.currentQuestion = new Question(this.state.randomQuestionQueue.shift());
+    this.state.currentQuestion = new StateQuestion(this.state.randomQuestionQueue.shift());
     this.unreadyPlayers();
   }
 
@@ -227,7 +233,7 @@ export class GameRoom extends Room<RoomState> {
     return true;
   }
 
-  onLeave(client: Client, consented: boolean) {
+  async onLeave(client: Client, consented: boolean) {
     logger.info({
       roomId: this.roomId,
       clientId: client.sessionId,
@@ -238,6 +244,16 @@ export class GameRoom extends Room<RoomState> {
     // if it were the host, pick a new host
     if (client.sessionId === this.state.host) {
       this.state.host = this.state.players.keys().next().value;
+    }
+
+    // if there are no players left, return to lobby
+    if (this.state.players.size < 2) {
+      await new Promise((res) => setTimeout(res, 500));
+      this.restartRoom();
+      this.broadcast('pushToast', {
+        description: 'Not enough players to continue',
+        type: 'info',
+      });
     }
   }
 
@@ -257,19 +273,18 @@ export class GameRoom extends Room<RoomState> {
     return id;
   }
 
-  getRandomQuestionQueue(amount = this.QUESTION_AMOUNT) {
+  async getRandomQuestionQueue(amount = this.QUESTION_AMOUNT) {
     if (this.allQuestions.length < amount) {
       logger.warn({roomId: this.roomId}, 'Not enough questions to generate a random queue, reloading all questions...');
-      this.allQuestions = getShuffledQuestions();
+      this.allQuestions = await getShuffledQuestions({decks: this.selectedDecks, minPlayers: this.state.players.size});
     }
     const q = this.allQuestions.slice(0, amount);
     this.allQuestions = this.allQuestions.slice(amount);
 
     const mapped = q.map((question) => {
-      const replacements = (question.match(/\[PLAYER\]/g) || []).length;
-      let temp = question;
-      if (replacements > 0) {
-        const keys = lodash.sampleSize(Array.from(this.state.players.keys()), replacements);
+      let temp = question.text;
+      if (question.minPlayers > 0) {
+        const keys = lodash.sampleSize(Array.from(this.state.players.keys()), question.minPlayers);
         const players = keys.map((k) => this.state.players.get(k));
         for (const player of players) {
           temp = temp.replace('[PLAYER]', `${player.emoji} ${player.nickname}`);

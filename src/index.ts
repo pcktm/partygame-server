@@ -4,12 +4,13 @@ import express from 'express';
 import {WebSocketTransport} from '@colyseus/ws-transport';
 import {monitor} from '@colyseus/monitor';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import {GameRoom} from './rooms/GameRoom';
 import {index} from './routes';
 import {httpLogger, logger} from './utils/loggers';
-import {questions} from './utils/questions';
 
-const port = Number(process.env.port) || 4000;
+dotenv.config();
+const port = Number(process.env.PORT) || 4000;
 
 const app = express();
 const server = createServer(app);
@@ -42,5 +43,4 @@ logger.info({
   port,
   environment: process.env.NODE_ENV,
   version: process.env.npm_package_version ?? 'unavailable',
-  questionsAmount: questions.length,
 }, 'server started');

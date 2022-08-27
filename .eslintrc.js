@@ -19,6 +19,7 @@ module.exports = {
     'no-console': 0,
     'no-plusplus': ['error', {allowForLoopAfterthoughts: true}],
     'no-restricted-syntax': 0,
+    'no-underscore-dangle': 0,
     '@typescript-eslint/no-unused-vars': ['off'],
   },
 };
