@@ -1,17 +1,18 @@
 {
   "private": true,
-  "name": "my-app",
+  "name": "partygame-server",
   "version": "2.0.0",
   "description": "npm init template for bootstrapping an empty Colyseus project",
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "dev": "NODE_ENV=development ts-node-dev --respawn --transpile-only src/index.ts | pino-pretty",
     "loadtest": "colyseus-loadtest loadtest/example.ts --room my_room --numClients 2",
-    "build": "npm run clean && tsc && node node_modules/copyfiles/copyfiles package.json ./lib && node node_modules/copyfiles/copyfiles arena.env ./lib",
-    "clean": "node node_modules/rimraf/bin lib",
+    "start": "node ./dist/src/index.js",
+    "build": "npm run clean && tsc",
+    "clean": "node node_modules/rimraf/bin dist",
     "test": "mocha --require ts-node/register test/**_test.ts --exit --timeout 15000"
   },
-  "author": "",
+  "author": "Jakub Kopańko <hi@kopanko.com> (kopanko.com)",
   "license": "UNLICENSED",
   "bugs": {
     "url": "https://github.com/colyseus/create-colyseus/issues"

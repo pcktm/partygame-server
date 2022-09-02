@@ -143,17 +143,17 @@ export class GameRoom extends Room<RoomState> {
   }
 
   async startGame() {
-    logger.info({roomId: this.roomId}, 'starting game');
-    this.state.randomQuestionQueue = await this.getRandomQuestionQueue();
-    this.lock();
-    this.beginNewRound();
-    db.playedGames.create({
+    await db.playedGames.create({
       data: {
         roomId: this.roomId,
         selectedDecks: this.selectedDecks,
         players: Array.from(this.state.players.values()).map((player) => player.nickname),
       },
     });
+    logger.info({roomId: this.roomId}, 'starting game');
+    this.state.randomQuestionQueue = await this.getRandomQuestionQueue();
+    this.lock();
+    this.beginNewRound();
   }
 
   beginNewRound() {
