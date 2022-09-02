@@ -1,5 +1,5 @@
 {
-  "private": true,
+  "private": false,
   "name": "partygame-server",
   "version": "2.0.1",
   "description": "npm init template for bootstrapping an empty Colyseus project",
@@ -12,12 +12,12 @@
     "clean": "node node_modules/rimraf/bin dist",
     "test": "mocha --require ts-node/register test/**_test.ts --exit --timeout 15000"
   },
+  "license": "AGPL-3.0",
   "author": "Jakub Kopańko <hi@kopanko.com> (kopanko.com)",
-  "license": "UNLICENSED",
-  "bugs": {
-    "url": "https://github.com/colyseus/create-colyseus/issues"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pcktm/partygame-server"
   },
-  "homepage": "https://github.com/colyseus/create-colyseus#readme",
   "devDependencies": {
     "@colyseus/loadtest": "^0.14.4",
     "@colyseus/testing": "^0.14.21",
