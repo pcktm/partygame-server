@@ -1,12 +1,10 @@
-import {PrismaClient} from '@prisma/client';
 import lodash from 'lodash';
+import db from './database';
 
 type RequestOptions = {
   decks: string[];
   minPlayers?: number;
 };
-
-const db = new PrismaClient();
 
 export const getShuffledQuestions = async (options: RequestOptions) => {
   const questions = await db.question.findMany({

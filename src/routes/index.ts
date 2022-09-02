@@ -1,8 +1,7 @@
 import {Router} from 'express';
 import os from 'os';
-import {PrismaClient} from '@prisma/client';
+import db from '../utils/database';
 
-const db = new PrismaClient();
 export const index = Router();
 
 index.get('/', async (req, res) => {
@@ -24,8 +23,8 @@ index.get('/decks', async (req, res) => {
         },
       },
     },
-    where: {
-      language: req.query.lang as string ?? 'en',
+    where: req.query.lang && {
+      language: req.query.lang as string,
     },
   });
   const ret = decks.map((d) => ({

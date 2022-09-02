@@ -12,6 +12,7 @@ import {
 } from './schema/RoomState';
 import {getRandomEmoji} from '../utils/emojis';
 import {getShuffledQuestions} from '../utils/questions';
+import db from '../utils/database';
 
 const nanoid = customAlphabet('abcdefghijklmnoprstuwxyz', 6);
 
@@ -50,8 +51,8 @@ export class GameRoom extends Room<RoomState> {
       } else if (this.state.players.size === 1 && player.isReady) {
         client.send('pushToast', {
           type: 'info',
-          title: 'Invite your friends!',
-          description: 'You need at least 2 players to play',
+          title: 'toasts.inviteFriends.title',
+          description: 'toasts.inviteFriends.description',
         });
       }
     });
@@ -77,8 +78,8 @@ export class GameRoom extends Room<RoomState> {
 
         if (!answer) {
           client.send('pushToast', {
-            title: 'Invalid choice',
-            description: 'Something went wrong, defaulting to left choice',
+            title: 'toasts.invalidChoice.title',
+            description: 'toasts.invalidChoice.description',
             type: 'error',
           });
           logger.error({roomId: this.roomId, clientId: client.sessionId, choice: answer}, 'invalid answer');
@@ -107,7 +108,7 @@ export class GameRoom extends Room<RoomState> {
       if (client.sessionId !== this.state.host) return;
       this.restartRoom();
       this.broadcast('pushToast', {
-        description: 'Game restarted',
+        description: 'toasts.gameRestarted',
         type: 'success',
       });
     });
@@ -145,6 +146,13 @@ export class GameRoom extends Room<RoomState> {
     this.state.randomQuestionQueue = await this.getRandomQuestionQueue();
     this.lock();
     this.beginNewRound();
+    db.playedGames.create({
+      data: {
+        roomId: this.roomId,
+        selectedDecks: this.selectedDecks,
+        players: Array.from(this.state.players.values()).map((player) => player.nickname),
+      },
+    });
   }
 
   beginNewRound() {
@@ -247,11 +255,11 @@ export class GameRoom extends Room<RoomState> {
     }
 
     // if there are no players left, return to lobby
-    if (this.state.players.size < 2) {
+    if (this.state.players.size < 2 && ['scores', 'lobby'].indexOf(this.state.screen) === -1) {
       await new Promise((res) => setTimeout(res, 500));
       this.restartRoom();
       this.broadcast('pushToast', {
-        description: 'Not enough players to continue',
+        description: 'toasts.notEnoughPlayers',
         type: 'info',
       });
     }
