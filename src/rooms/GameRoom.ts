@@ -27,10 +27,11 @@ export class GameRoom extends Room<RoomState> {
 
   allQuestions: DatabaseQuestion[] = [];
 
-  async onCreate(options: never) {
+  async onCreate(options: {decks: string[]}) {
     this.roomId = await this.generateRoomId();
     this.setPrivate(true);
     this.maxClients = this.MAX_CLIENTS;
+    this.selectedDecks = options.decks;
 
     const state = new RoomState();
     this.setState(state);

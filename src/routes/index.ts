@@ -32,6 +32,7 @@ index.get('/decks', async (req, res) => {
     name: d.name,
     emoji: d.emoji,
     language: d.language,
+    isExplicit: d.isExplicit,
     questionCount: d._count?.questions ?? 0,
   }));
   res.send(ret);
