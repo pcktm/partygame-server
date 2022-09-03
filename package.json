@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "NODE_ENV=development ts-node-dev --respawn --transpile-only src/index.ts | pino-pretty",
     "loadtest": "colyseus-loadtest loadtest/example.ts --room my_room --numClients 2",
-    "start": "node ./dist/src/index.js",
+    "start": "NODE_ENV=production node ./dist/src/index.js",
     "build": "npm run clean && tsc",
     "clean": "node node_modules/rimraf/bin dist",
     "test": "mocha --require ts-node/register test/**_test.ts --exit --timeout 15000"

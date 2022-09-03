@@ -19,7 +19,7 @@ const nanoid = customAlphabet('abcdefghijklmnoprstuwxyz', 6);
 export class GameRoom extends Room<RoomState> {
   LOBBY_CHANNEL = '$epiclobby';
 
-  QUESTION_AMOUNT = Number(process.env.DEFEND_QUESTION_AMOUNT) || 8;
+  QUESTION_AMOUNT = Number(process.env.DEFAULT_QUESTION_AMOUNT) || 8;
 
   MAX_CLIENTS = Number(process.env.MAX_ALLOWED_CLIENTS) || 12;
 
