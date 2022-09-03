@@ -285,6 +285,7 @@ export class GameRoom extends Room<RoomState> {
   async getRandomQuestionQueue(amount = this.QUESTION_AMOUNT) {
     if (this.allQuestions.length < amount) {
       logger.warn({roomId: this.roomId}, 'Not enough questions to generate a random queue, reloading all questions...');
+      // TODO: this queries the database only once and filters the answers already, while the player count might change between rounds
       this.allQuestions = await getShuffledQuestions({decks: this.selectedDecks, minPlayers: this.state.players.size});
     }
     const q = this.allQuestions.slice(0, amount);
