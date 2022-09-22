@@ -151,6 +151,13 @@ export class GameRoom extends Room<RoomState> {
       },
     });
     logger.info({roomId: this.roomId}, 'starting game');
+    if (this.state.players.size < 4) {
+      this.broadcast('pushToast', {
+        title: 'toasts.itsMoreFun.title',
+        description: 'toasts.itsMoreFun.description',
+        type: 'warning',
+      });
+    }
     this.state.randomQuestionQueue = await this.getRandomQuestionQueue();
     this.lock();
     this.beginNewRound();
