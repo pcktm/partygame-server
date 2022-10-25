@@ -25,10 +25,29 @@
     nanoid "^2.0.0"
     notepack.io "^2.2.0"
 
-"@colyseus/loadtest@^0.14.4":
-  version "0.14.7"
-  resolved "https://registry.yarnpkg.com/@colyseus/loadtest/-/loadtest-0.14.7.tgz#7faf48bde9ad46d1e86fdf53ad221018d19eec65"
-  integrity sha512-CRg2iAewuWRNglbandKOL/gNslw1Wo7WEuvZbH7DaT6Cpn0kIgeltBqPP49ldHIan1MCtLcrkcnTVWthy3qGng==
+"@colyseus/core@^0.14.33":
+  version "0.14.36"
+  resolved "https://registry.yarnpkg.com/@colyseus/core/-/core-0.14.36.tgz#651c1a13ee72b781798e29daa3af050c32bff113"
+  integrity sha512-Gy1/3xQV6Fd/NmmmWD3Cgb1aC2w516GGmOELcrKAgEBP0LAEal19hz0DaQRVJuLkUCo/9j5OxqK0ZvED4925YQ==
+  dependencies:
+    "@colyseus/greeting-banner" "^1.0.0"
+    "@colyseus/schema" "^1.0.15"
+    "@gamestdio/timer" "^1.3.0"
+    "@types/redis" "^2.8.12"
+    debug "^4.0.1"
+    internal-ip "^4.3.0"
+    nanoid "^2.0.0"
+    notepack.io "^2.2.0"
+
+"@colyseus/greeting-banner@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@colyseus/greeting-banner/-/greeting-banner-1.0.0.tgz#a1057ca2b5e9c6b4fe5f5a7e498fb1781e23d541"
+  integrity sha512-B/gAslDjeIUdelpF/ILycRLVIwisgoNCw70MlzwntOrfYwZ5L6MA9SDd8hGG+ONN6Ic8MkziZpyo8UqApLXLfg==
+
+"@colyseus/loadtest@^0.14.8":
+  version "0.14.8"
+  resolved "https://registry.yarnpkg.com/@colyseus/loadtest/-/loadtest-0.14.8.tgz#3d97243a330113fef05ed9f304f82a9d3f0d3126"
+  integrity sha512-JMvF5rzBxRLu/VqvcXHWNWDZ0azqP3ufUf0HPj2T7ttHEJKrqKyvx4TaaSzPpR+MYIMEHQ7hYvNnlPr/CalVFw==
   dependencies:
     blessed "^0.1.81"
     colyseus.js "^0.14.13"
@@ -37,7 +56,7 @@
     typescript "^4.3.5"
     ws "^7.4.5"
 
-"@colyseus/mongoose-driver@^0.14.21":
+"@colyseus/mongoose-driver@^0.14.22":
   version "0.14.22"
   resolved "https://registry.yarnpkg.com/@colyseus/mongoose-driver/-/mongoose-driver-0.14.22.tgz#8c085158c747438cd07f9f58116786bb47460391"
   integrity sha512-Bqg+1XGHo4t3UUqBxSCDuvxzuuDBObxOWVBH0GjdFmXWzJgrkMgkDFH8YXjo9h/sXaPRJNzJRlXMCV1txbYadw==
@@ -45,7 +64,7 @@
     "@colyseus/core" "^0.14.20"
     mongoose "^5.11.3"
 
-"@colyseus/monitor@^0.14.20":
+"@colyseus/monitor@^0.14.22":
   version "0.14.22"
   resolved "https://registry.yarnpkg.com/@colyseus/monitor/-/monitor-0.14.22.tgz#c1a62567b000dba78652bf368986243c521af99a"
   integrity sha512-bApRiJLzdPUK/6wPZFrXaxMnSCOf+TYCN1leRlrG8UcEj/l9oZKeUk5uGej+uAzTRO6fOruQsEgBKMnBwvBNUQ==
@@ -54,18 +73,23 @@
     node-os-utils "^1.2.0"
     superagent "^3.8.2"
 
-"@colyseus/redis-presence@^0.14.20":
-  version "0.14.20"
-  resolved "https://registry.yarnpkg.com/@colyseus/redis-presence/-/redis-presence-0.14.20.tgz#b0530925d3c30da139c4e673c29ec6f5f3ad968c"
-  integrity sha512-ZxpY9ji/tGYT4ms/4q5w7tjUfqekCDnpZ8J+XuXVpZN02iD6cd/RpCwIyaEsRUVpkcRZw9jxX8hSQ3L5aG/3VA==
+"@colyseus/redis-presence@^0.14.21":
+  version "0.14.21"
+  resolved "https://registry.yarnpkg.com/@colyseus/redis-presence/-/redis-presence-0.14.21.tgz#e38bcf5790ed3167a28c01ec98429146dde10160"
+  integrity sha512-VsPVDt2vUNq+wRfjzAXGvlk9Oq96jGpYIz4eMf8JOloiFHHu/RdagkMKHmFRLW/ShbMNHM5BQSiY/oLq+qpeyg==
   dependencies:
     "@colyseus/core" "^0.14.20"
     redis "^2.8.0"
 
-"@colyseus/schema@^1.0.15", "@colyseus/schema@^1.0.22", "@colyseus/schema@^1.0.36":
+"@colyseus/schema@^1.0.15", "@colyseus/schema@^1.0.22":
   version "1.0.36"
   resolved "https://registry.yarnpkg.com/@colyseus/schema/-/schema-1.0.36.tgz#6831b0eb8f8937918b37427903e69c53f6816211"
   integrity sha512-9LHDELuDCcp/EbZUsgdcekOPINvq+5Dn/Jooq+I2jHymU1zqzzwoqNq9+YYkuvI70OIJ1esPurcMTA2+o7brYg==
+
+"@colyseus/schema@^1.0.42":
+  version "1.0.42"
+  resolved "https://registry.yarnpkg.com/@colyseus/schema/-/schema-1.0.42.tgz#dc0f6da163b989cce915ccd76df4c81a2afee461"
+  integrity sha512-0FvpE0ysOls4Nq6UexmqqNzQuvUzdfrpm/EwC0olfDCiYqPPpDVG27FqbMRhs5lOs2lLFPipTbQxG3UqVnWliw==
 
 "@colyseus/testing@^0.14.21":
   version "0.14.22"
@@ -914,14 +938,14 @@ colyseus.js@^0.14.13:
     notepack.io "^2.1.3"
     tslib "^2.1.0"
 
-colyseus@^0.14.20:
-  version "0.14.23"
-  resolved "https://registry.yarnpkg.com/colyseus/-/colyseus-0.14.23.tgz#7cc1e42f198438fd5d47336ad1f8402d3856348f"
-  integrity sha512-y2F0vmOx+k8nG2KGcKMeDNjamYNYA+x+E0dVqqWw7lD6g2PhuX8/hkGRrWagJqbFiYTIMfZfa+zN9DinAMCshg==
+colyseus@^0.14.24:
+  version "0.14.24"
+  resolved "https://registry.yarnpkg.com/colyseus/-/colyseus-0.14.24.tgz#7477abba74d939ed46d6c804e587ca46b85865f3"
+  integrity sha512-plKZ2vmxyHDo01ZUaNwmTz5L6uAn1PDJG7gPi8bgsXXVpBIrM6YuiMgw8qNq8lZdqjEuL9uDLxGjgwnXVq6NqQ==
   dependencies:
-    "@colyseus/core" "^0.14.20"
-    "@colyseus/mongoose-driver" "^0.14.21"
-    "@colyseus/redis-presence" "^0.14.20"
+    "@colyseus/core" "^0.14.33"
+    "@colyseus/mongoose-driver" "^0.14.22"
+    "@colyseus/redis-presence" "^0.14.21"
     "@colyseus/ws-transport" "^0.14.21"
 
 combined-stream@^1.0.6, combined-stream@^1.0.8:
