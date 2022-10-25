@@ -1,5 +1,5 @@
 import {
-  Schema, MapSchema, ArraySchema, type,
+  Schema, MapSchema, ArraySchema, type, filterChildren,
 } from '@colyseus/schema';
 import {Room, Client} from 'colyseus';
 import lodash from 'lodash';
@@ -61,6 +61,17 @@ export class Duel extends Schema {
 
   internalCorrectPlayerId: string;
 
+  @filterChildren(function(
+    this: Duel,
+    client: any,
+    key: string,
+    value: string,
+    root: RoomState
+  ) {
+    if (client.sessionId === key) return true;
+    if (key === this.left.id || key === this.right.id) return false;
+    return true;
+    })
   @type({map: 'string'})
     votes = new MapSchema<string>();
 
@@ -107,14 +118,13 @@ export class RoomState extends Schema {
     const availablePlayers = lodash.shuffle(Array.from(this.currentQuestion.internalAnswers.keys()));
     const duels: Duel[] = [];
 
-    for (let i = 0; i < availablePlayers.length - 1; i += 1) {
+    for (let i = 0; i < availablePlayers.length; i += 1) {
       const first = availablePlayers[i];
-      const second = availablePlayers[i + 1];
+      const second = availablePlayers[i + 1] ?? availablePlayers[0];
 
       const duel = new Duel();
       duel.internalCorrectPlayerId = first;
       duel.answer = this.currentQuestion.internalAnswers.get(first);
-      // pokazywać prawdziwe odpowiedzi dopiero pod koniec rundy
 
       if (Math.random() > 0.5) {
         duel.left = this.players.get(first);
