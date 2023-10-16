@@ -66,9 +66,7 @@ export class GameRoom extends Room<RoomState> {
         this.state.currentQuestion.addAnswer(client, answer.substring(0, 35));
       }
       // if all players submitted answers
-      if (this.areAllPlayersReady()) {
-        this.beginDuels();
-      }
+      this.checkCondition();
     });
 
     this.onMessage('submitDuelChoice', async (client, answer) => {
@@ -89,10 +87,7 @@ export class GameRoom extends Room<RoomState> {
         this.state.currentDuel.votes.set(client.sessionId, answer ?? this.state.currentDuel.left.id);
       }
 
-      if (this.areAllPlayersReady()) {
-        this.updateScores();
-        this.state.currentDuel.reveal();
-      }
+      this.checkCondition();
     });
 
     this.onMessage('requestNextScreen', (client) => {
@@ -113,6 +108,19 @@ export class GameRoom extends Room<RoomState> {
         type: 'success',
       });
     });
+  }
+
+  checkCondition() {
+    if (this.state.screen == 'questionAsked') {
+      if (this.areAllPlayersReady()) {
+        this.beginDuels();
+      }
+    } else if (this.state.screen == "duel") {
+      if (this.areAllPlayersReady()) {
+        this.updateScores();
+        this.state.currentDuel.reveal();
+      }
+    }
   }
 
   restartRoom() {
@@ -270,6 +278,10 @@ export class GameRoom extends Room<RoomState> {
         description: 'toasts.notEnoughPlayers',
         type: 'info',
       });
+    }
+
+    if (!["lobby", "scores"].includes(this.state.screen)) {
+      this.checkCondition();
     }
   }
 
