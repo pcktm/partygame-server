@@ -16,11 +16,7 @@ app.disable('x-powered-by');
 app.set('trust proxy', 'loopback');
 
 app.use(httpLogger());
-app.use(cors({
-  origin: (origin, callback) => {
-    callback(null, true);
-  },
-}));
+app.use(cors());
 app.use(express.json());
 
 app.use('/colyseus', monitor());
