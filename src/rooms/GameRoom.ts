@@ -2,8 +2,6 @@
 import {Room, Client} from 'colyseus';
 import {customAlphabet} from 'nanoid';
 import {IncomingMessage} from 'http';
-import UAParser from 'ua-parser-js';
-import {Question as DatabaseQuestion} from '@prisma/client';
 import {MapSchema} from '@colyseus/schema';
 import {sampleSize} from 'es-toolkit';
 import {logger} from '../utils/loggers';
@@ -13,6 +11,7 @@ import {
 import {getRandomEmoji} from '../utils/emojis';
 import {getShuffledQuestions} from '../utils/questions';
 import db from '../utils/database';
+import { Prisma } from '../../generated/prisma_client';
 
 const nanoid = customAlphabet('abcdefghijklmnoprstuwxyz', 6);
 
@@ -25,7 +24,7 @@ export class GameRoom extends Room<RoomState> {
 
   selectedDecks: string[] = [process.env.DEFAULT_DECK_ID ?? ''];
 
-  allQuestions: DatabaseQuestion[] = [];
+  allQuestions: Prisma.PromiseReturnType<typeof getShuffledQuestions> = [];
 
   async onCreate(options: {decks: string[]}) {
     this.roomId = await this.generateRoomId();
@@ -245,14 +244,11 @@ export class GameRoom extends Room<RoomState> {
   }
 
   onAuth(client: Client, options: {nickname: string}, request?: IncomingMessage) {
-    const browser = UAParser(request.headers['user-agent']);
     logger.info({
       roomId: this.roomId,
       clientId: client.sessionId,
       nickname: options.nickname,
       remoteAddress: request.headers['x-forwarded-for'] ?? request.socket.remoteAddress,
-      browser: `${browser.browser.name} ${browser.browser.version}`,
-      os: `${browser.os.name} ${browser.os.version}`,
     }, 'client authenticated');
     return true;
   }

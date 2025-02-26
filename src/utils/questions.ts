@@ -1,4 +1,4 @@
-import lodash from 'lodash';
+import {shuffle} from 'es-toolkit';
 import db from './database';
 
 type RequestOptions = {
@@ -17,5 +17,5 @@ export const getShuffledQuestions = async (options: RequestOptions) => {
       },
     },
   });
-  return lodash.shuffle(questions);
+  return shuffle(questions);
 };

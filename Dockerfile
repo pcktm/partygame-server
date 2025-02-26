@@ -1,5 +1,7 @@
 FROM node:22-alpine
 
+#
+
 WORKDIR /app
 
 COPY package.json yarn.lock ./
@@ -8,6 +10,6 @@ RUN yarn install --frozen-lockfile
 
 COPY . .
 
-ENV NODE_ENV=production
+RUN yarn prisma generate
 
-CMD ["yarn", "start"]
+ENV NODE_ENV=production

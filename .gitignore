@@ -5,3 +5,4 @@ dist
 !.env.project
 !.env.vault
 data
+generated
