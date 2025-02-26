@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "NODE_ENV=development tsx src/index.ts | pino-pretty",
     "start": "NODE_ENV=production tsx src/index.ts",
-    "build": "npm run clean && tsc",
+    "build": "yarn run clean && tsc",
+    "migrate": "yarn prisma migrate deploy",
     "clean": "node node_modules/rimraf/bin dist"
   },
   "license": "AGPL-3.0",
