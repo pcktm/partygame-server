@@ -4,12 +4,10 @@ import express from 'express';
 import {WebSocketTransport} from '@colyseus/ws-transport';
 import {monitor} from '@colyseus/monitor';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import {GameRoom} from './rooms/GameRoom';
 import {index} from './routes';
 import {httpLogger, logger} from './utils/loggers';
 
-dotenv.config();
 const port = Number(process.env.PORT) || 4000;
 
 const app = express();
