@@ -1,8 +1,8 @@
 import {
   Schema, MapSchema, ArraySchema, type, filterChildren,
 } from '@colyseus/schema';
+import {shuffle} from 'es-toolkit';
 import {Room, Client} from 'colyseus';
-import lodash from 'lodash';
 
 export class Player extends Schema {
   @type('string')
@@ -115,7 +115,7 @@ export class RoomState extends Schema {
 
   generateDuelQueue() {
     this.internalDuels = [];
-    const availablePlayers = lodash.shuffle(Array.from(this.currentQuestion.internalAnswers.keys()));
+    const availablePlayers = shuffle(Array.from(this.currentQuestion.internalAnswers.keys()));
     const duels: Duel[] = [];
 
     for (let i = 0; i < availablePlayers.length; i += 1) {
@@ -136,6 +136,6 @@ export class RoomState extends Schema {
 
       if (duel.left !== undefined && duel.right !== undefined) duels.push(duel);
     }
-    this.internalDuels = lodash.shuffle(duels);
+    this.internalDuels = shuffle(duels);
   }
 }

@@ -2,10 +2,8 @@
 import {Room, Client} from 'colyseus';
 import {customAlphabet} from 'nanoid';
 import {IncomingMessage} from 'http';
-import lodash from 'lodash';
-import UAParser from 'ua-parser-js';
-import {Question as DatabaseQuestion} from '@prisma/client';
 import {MapSchema} from '@colyseus/schema';
+import {sampleSize} from 'es-toolkit';
 import {logger} from '../utils/loggers';
 import {
   Duel, Player, Question as StateQuestion, RoomState,
@@ -13,6 +11,7 @@ import {
 import {getRandomEmoji} from '../utils/emojis';
 import {getShuffledQuestions} from '../utils/questions';
 import db from '../utils/database';
+import { Prisma } from '../../generated/prisma_client';
 
 const nanoid = customAlphabet('abcdefghijklmnoprstuwxyz', 6);
 
@@ -25,7 +24,7 @@ export class GameRoom extends Room<RoomState> {
 
   selectedDecks: string[] = [process.env.DEFAULT_DECK_ID ?? ''];
 
-  allQuestions: DatabaseQuestion[] = [];
+  allQuestions: Prisma.PromiseReturnType<typeof getShuffledQuestions> = [];
 
   async onCreate(options: {decks: string[]}) {
     this.roomId = await this.generateRoomId();
@@ -245,14 +244,11 @@ export class GameRoom extends Room<RoomState> {
   }
 
   onAuth(client: Client, options: {nickname: string}, request?: IncomingMessage) {
-    const browser = UAParser(request.headers['user-agent']);
     logger.info({
       roomId: this.roomId,
       clientId: client.sessionId,
       nickname: options.nickname,
       remoteAddress: request.headers['x-forwarded-for'] ?? request.socket.remoteAddress,
-      browser: `${browser.browser.name} ${browser.browser.version}`,
-      os: `${browser.os.name} ${browser.os.version}`,
     }, 'client authenticated');
     return true;
   }
@@ -313,7 +309,7 @@ export class GameRoom extends Room<RoomState> {
     const mapped = q.map((question) => {
       let temp = question.text;
       if (question.minPlayers > 0) {
-        const keys = lodash.sampleSize(Array.from(this.state.players.keys()), question.minPlayers);
+        const keys = sampleSize(Array.from(this.state.players.keys()), question.minPlayers);
         const players = keys.map((k) => this.state.players.get(k));
         for (const player of players) {
           temp = temp.replace('[PLAYER]', `${player.emoji} ${player.nickname}`);
